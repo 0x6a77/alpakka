@@ -5,9 +5,10 @@ package akka.stream.alpakka.ftp
 package impl
 
 import org.apache.commons.net.ftp.{FTP, FTPClient}
+
 import scala.collection.immutable
 import scala.util.Try
-import java.io.{IOException, InputStream}
+import java.io.{IOException, InputStream, OutputStream}
 import java.nio.file.Paths
 
 private[ftp] trait FtpOperations { _: FtpLike[FTPClient, FtpFileSettings] =>
@@ -49,6 +50,11 @@ private[ftp] trait FtpOperations { _: FtpLike[FTPClient, FtpFileSettings] =>
 
   def retrieveFileInputStream(name: String, handler: Handler): Try[InputStream] = Try {
     val is = handler.retrieveFileStream(name)
+    if (is != null) is else throw new IOException(s"$name: No such file or directory")
+  }
+
+  def storeFileOutputStream(name: String, handler: Handler): Try[OutputStream] = Try {
+    val is = handler.storeFileStream(name)
     if (is != null) is else throw new IOException(s"$name: No such file or directory")
   }
 }

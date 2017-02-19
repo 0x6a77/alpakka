@@ -9,12 +9,13 @@ import akka.stream.{Attributes, IOResult, Outlet, SourceShape}
 import akka.stream.impl.Stages.DefaultAttributes.IODispatcher
 import akka.util.ByteString
 import akka.util.ByteString.ByteString1C
+
 import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 import java.io.InputStream
 import java.nio.file.Path
 
-private[ftp] trait FtpIOGraphStage[FtpClient, S <: RemoteFileSettings]
+private[ftp] trait FtpSourceStage[FtpClient, S <: RemoteFileSettings]
     extends GraphStageWithMaterializedValue[SourceShape[ByteString], Future[IOResult]] {
 
   def name: String

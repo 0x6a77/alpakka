@@ -8,8 +8,8 @@ import akka.stream.alpakka.ftp.impl._
 import akka.stream.alpakka.ftp.{FtpFile, RemoteFileSettings}
 import akka.stream.alpakka.ftp.impl.{FtpLike, FtpSourceFactory}
 import akka.stream.IOResult
-import akka.stream.javadsl.Source
-import akka.stream.scaladsl.{Source => ScalaSource}
+import akka.stream.javadsl.{Sink, Source}
+import akka.stream.scaladsl.{Sink => ScalaSink, Source => ScalaSource}
 import akka.util.ByteString
 import com.jcraft.jsch.JSch
 import org.apache.commons.net.ftp.FTPClient
@@ -149,8 +149,40 @@ sealed trait FtpApi[FtpClient] { _: FtpSourceFactory[FtpClient] =>
       chunkSize: Int = DefaultChunkSize
   ): Source[ByteString, CompletionStage[IOResult]] = {
     import scala.compat.java8.FutureConverters._
-    ScalaSource.fromGraph(createIOGraph(path, connectionSettings, chunkSize)).mapMaterializedValue(_.toJava).asJava
+    ScalaSource.fromGraph(createSourceStage(path, connectionSettings, chunkSize)).mapMaterializedValue(_.toJava).asJava
   }
+
+  /**
+   * Java API: creates a [[Sink]] of [[ByteString]] to some file [[Path]].
+   *
+   * @param path the file path
+   * @param connectionSettings connection settings
+   * @return A [[Sink]] of [[ByteString]] that materializes to a [[CompletionStage]] of [[IOResult]]
+   */
+  def toPath(
+      path: String,
+      connectionSettings: S
+  ): Sink[ByteString, CompletionStage[IOResult]] =
+    toPath(path, connectionSettings, DefaultChunkSize)
+
+  /**
+   * Java API: creates a [[Sink]] of [[ByteString]] to some file [[Path]].
+   *
+   * @param path the file path
+   * @param connectionSettings connection settings
+   * @param chunkSize the size of transmitted [[ByteString]] chunks
+   * @return A [[Sink]] of [[ByteString]] that materializes to a [[CompletionStage]] of [[IOResult]]
+   */
+  def toPath(
+      path: String,
+      connectionSettings: S,
+      chunkSize: Int = DefaultChunkSize
+  ): Sink[ByteString, CompletionStage[IOResult]] = {
+    import scala.compat.java8.FutureConverters._
+    ScalaSink.fromGraph(createSinkStage(path, connectionSettings, chunkSize)).mapMaterializedValue(_.toJava).asJava
+  }
+
+
 
   protected[this] implicit def ftpLike: FtpLike[FtpClient, S]
 }

@@ -8,10 +8,11 @@ import akka.stream.alpakka.ftp.impl._
 import akka.stream.IOResult
 import akka.stream.alpakka.ftp.{FtpFile, RemoteFileSettings}
 import akka.stream.alpakka.ftp.impl.{FtpLike, FtpSourceFactory}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Source, Sink}
 import akka.util.ByteString
 import com.jcraft.jsch.JSch
 import org.apache.commons.net.ftp.FTPClient
+
 import scala.concurrent.Future
 import java.nio.file.Path
 
@@ -111,7 +112,22 @@ sealed trait FtpApi[FtpClient] { _: FtpSourceFactory[FtpClient] =>
       connectionSettings: S,
       chunkSize: Int = DefaultChunkSize
   ): Source[ByteString, Future[IOResult]] =
-    Source.fromGraph(createIOGraph(path, connectionSettings, chunkSize))
+    Source.fromGraph(createSourceStage(path, connectionSettings, chunkSize))
+
+  /**
+   * Scala API: creates a [[Source]] of [[ByteString]] from some file [[Path]].
+   *
+   * @param path the file path
+   * @param connectionSettings connection settings
+   * @param chunkSize the size of transmitted [[ByteString]] chunks
+   * @return A [[Sink]] of [[ByteString]] that materializes to a [[Future]] of [[IOResult]]
+   */
+  def toPath(
+      path: String,
+      connectionSettings: S,
+      chunkSize: Int = DefaultChunkSize
+  ): Sink[ByteString, Future[IOResult]] =
+    Sink.fromGraph(createSinkStage(path, connectionSettings, chunkSize))
 
   protected[this] implicit def ftpLike: FtpLike[FtpClient, S]
 }
